@@ -128,6 +128,7 @@ export default class NeovimScreen {
     }
 
     clearAll() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = this.store.bg_color;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -271,6 +272,7 @@ export default class NeovimScreen {
 
     private drawBlock(line: number, col: number, height: number, width: number, color: string) {
         const {draw_width, draw_height} = this.store.font_attr;
+        this.ctx.clearRect(Math.floor(col * draw_width), line * draw_height, Math.ceil(width * draw_width), height * draw_height);
         this.ctx.fillStyle = color;
         // Note:
         // Height doesn't need to be truncated (floor, ceil) but width needs.

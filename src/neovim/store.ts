@@ -40,16 +40,16 @@ export interface FontAttributes {
 export type DispatcherType = Dispatcher<ActionType>;
 
 // Note: 0x001203 -> '#001203'
-function colorString(new_color: number, fallback: string) {
+function colorString(new_color: number, fallback: string, opacity = 1) {
     if (typeof new_color !== 'number' || new_color < 0) {
         return fallback;
     }
 
-    return '#' + [16, 8, 0].map(shift => {
-        const mask = 0xff << shift;
-        const hex = ((new_color & mask) >> shift).toString(16);
-        return hex.length < 2 ? ('0' + hex) : hex;
-    }).join('');
+    var r = (new_color >> 16) & 255;
+    var g = (new_color >> 8) & 255;
+    var b = new_color & 255;
+
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`
 }
 
 export default class NeovimStore extends EventEmitter {
@@ -157,10 +157,10 @@ export default class NeovimStore extends EventEmitter {
                 this.font_attr.undercurl = hl.undercurl;
                 if (hl.reverse === true) {
                     this.font_attr.fg = colorString(hl.background, this.bg_color);
-                    this.font_attr.bg = colorString(hl.foreground, this.fg_color);
+                    this.font_attr.bg = colorString(hl.foreground, this.fg_color, 0.7);
                 } else {
                     this.font_attr.fg = colorString(hl.foreground, this.fg_color);
-                    this.font_attr.bg = colorString(hl.background, this.bg_color);
+                    this.font_attr.bg = colorString(hl.background, this.bg_color, 0.7);
                 }
                 this.font_attr.sp = colorString(hl.special, this.sp_color || this.fg_color);
                 log.debug('Highlight is updated: ', this.font_attr);
@@ -208,7 +208,7 @@ export default class NeovimStore extends EventEmitter {
                 break;
             }
             case Kind.UpdateBG: {
-                this.bg_color = colorString(action.color, this.font_attr.bg);
+                this.bg_color = colorString(action.color, this.font_attr.bg, 0.7);
                 this.emit('update-bg');
                 log.debug('Background color is updated: ', this.bg_color);
                 break;

@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import Emitter from 'component-emitter';
 import { Nvim } from 'promised-neovim-client';
 import { Dispatcher } from 'flux';
 import cp = require('child_process');

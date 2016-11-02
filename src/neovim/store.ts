@@ -157,10 +157,10 @@ export default class NeovimStore extends EventEmitter {
                 this.font_attr.undercurl = hl.undercurl;
                 if (hl.reverse === true) {
                     this.font_attr.fg = colorString(hl.background, this.bg_color);
-                    this.font_attr.bg = colorString(hl.foreground, this.fg_color, 0.7);
+                    this.font_attr.bg = colorString(hl.foreground, this.fg_color, 0.8);
                 } else {
                     this.font_attr.fg = colorString(hl.foreground, this.fg_color);
-                    this.font_attr.bg = colorString(hl.background, this.bg_color, 0.7);
+                    this.font_attr.bg = colorString(hl.background, this.bg_color, 0.8);
                 }
                 this.font_attr.sp = colorString(hl.special, this.sp_color || this.fg_color);
                 log.debug('Highlight is updated: ', this.font_attr);
@@ -208,7 +208,7 @@ export default class NeovimStore extends EventEmitter {
                 break;
             }
             case Kind.UpdateBG: {
-                this.bg_color = colorString(action.color, this.font_attr.bg, 0.7);
+                this.bg_color = colorString(action.color, this.font_attr.bg, 0.8);
                 this.emit('update-bg');
                 log.debug('Background color is updated: ', this.bg_color);
                 break;
@@ -380,6 +380,19 @@ export default class NeovimStore extends EventEmitter {
                 if (changed) {
                     this.emit('blink-cursor-stopped');
                 }
+                break;
+            }
+            case Kind.StartComposing: {
+                let {line, col} = this.cursor
+                this.emit('start-composition', line, col)
+                break;
+            }
+            case Kind.UpdateComposing: {
+                this.emit('update-composition', action.input)
+                break;
+            }
+            case Kind.EndComposing: {
+                this.emit('end-composition')
                 break;
             }
             default: {

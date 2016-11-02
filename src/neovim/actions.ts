@@ -55,6 +55,9 @@ export enum Kind {
     UpdateScreenSize,
     WheelScroll,
     FocusChanged,
+    StartComposing,
+    UpdateComposing,
+    EndComposing,
 };
 
 export interface ActionType {
@@ -331,4 +334,23 @@ export function stopBlinkCursor() {
     return {
         type: Kind.StopBlinkCursor,
     };
+}
+
+export function startComposing() {
+  return {
+    type: Kind.StartComposing
+  };
+}
+
+export function updateComposing(input: string) {
+  return {
+    type: Kind.UpdateComposing,
+    input
+  };
+}
+
+export function endComposing() {
+  return {
+    type: Kind.EndComposing
+  };
 }

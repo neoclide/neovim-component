@@ -1,5 +1,5 @@
 import NeovimStore from './store';
-import {inputToNeovim, notifyFocusChanged} from './actions';
+import {inputToNeovim, notifyFocusChanged, startComposing, updateComposing, endComposing} from './actions';
 import log from '../log';
 
 const OnDarwin = global.process.platform === 'darwin';
@@ -237,11 +237,22 @@ export default class NeovimInput {
     startComposition(_: Event) {
         log.debug('start composition');
         this.ime_running = true;
+        this.store.dispatcher.dispatch(startComposing());
     }
 
-    endComposition(_: Event) {
+    endComposition(event: Event) {
         log.debug('end composition');
         this.ime_running = false;
+        this.store.dispatcher.dispatch(endComposing());
+
+        const t = event.target as HTMLInputElement;
+        //if (t.value === '') {
+        //    log.warn('onInputText: Empty');
+        //    return;
+        //}
+
+        const input = t.value !== '<' ? t.value : '<LT>';
+        this.inputToNeovim(input, event, false);
     }
 
     focus() {
@@ -348,13 +359,14 @@ export default class NeovimInput {
         }
     }
 
-    inputToNeovim(input: string, event: Event) {
+    inputToNeovim(input: string, event: Event, prevent = true) {
         this.store.dispatcher.dispatch(inputToNeovim(input));
 
         log.debug('Input to neovim:', JSON.stringify(input));
-
-        event.preventDefault();
-        event.stopPropagation();
+        if (prevent) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         const t = event.target as HTMLInputElement;
         if (t.value) {
             t.value = '';
@@ -364,19 +376,18 @@ export default class NeovimInput {
     onInputText(event: KeyboardEvent) {
         log.debug('Input event:', event);
 
-        if (this.ime_running) {
-            log.debug('IME is running.  Input canceled.');
-            return;
-        }
-
         const t = event.target as HTMLInputElement;
         if (t.value === '') {
             log.warn('onInputText: Empty');
-            return;
         }
 
         const input = t.value !== '<' ? t.value : '<LT>';
-        this.inputToNeovim(input, event);
+        if (this.ime_running) {
+            log.debug('IME is running.  Input canceled.');
+            this.store.dispatcher.dispatch(updateComposing(input));
+            return;
+        }
+        if (input) this.inputToNeovim(input, event);
     }
 
     updateElementPos() {

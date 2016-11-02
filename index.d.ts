@@ -62,6 +62,9 @@ export declare enum Kind {
     UpdateScreenSize = 33,
     WheelScroll = 34,
     FocusChanged = 35,
+    StartComposing = 36,
+    UpdateComposing = 37,
+    endComposing = 38,
 }
 export interface ActionType {
     type: Kind;
@@ -226,6 +229,15 @@ export declare function startBlinkCursor(): {
     type: Kind;
 }
 export declare function stopBlinkCursor(): {
+    type: Kind;
+}
+export declare function startComposing(line: number, col: number): {
+    type: Kind;
+}
+export declare function updateComposing(input: string): {
+    type: Kind;
+}
+export declare function endComposing(input: string): {
     type: Kind;
 }
 

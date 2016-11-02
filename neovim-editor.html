@@ -29,7 +29,18 @@
         top: 0px;
         left: 0px;
       }
+      #neovim-composing {
+        color: #fff;
+        z-index: 99999;
+        white-space: pre;
+        position: absolute;
+        left: 0;
+        top: 0;
+        text-decoration: underline;
+        /*bgcolor, font, line-height*/
+      }
     </style>
+    <div id="neovim-composing"></div>
     <div class="neovim-wrapper">
       <canvas class="neovim-canvas" width$="[[width]]" height$="[[height]]"></canvas>
       <canvas class="neovim-cursor">

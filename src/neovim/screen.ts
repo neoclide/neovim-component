@@ -8,6 +8,8 @@ export default class NeovimScreen {
     ctx: CanvasRenderingContext2D;
     cursor: Cursor;
     input: Input;
+    startColumn: number;
+    composeEl: HTMLElement;
 
     constructor(private store: NeovimStore, public canvas: HTMLCanvasElement) {
         this.ctx = this.canvas.getContext('2d', {alpha: false});
@@ -23,6 +25,10 @@ export default class NeovimScreen {
             () => this.changeFontSize(this.store.font_attr.specified_px)
         );
 
+        this.store.on('start-composition', this.startComposition.bind(this))
+        this.store.on('update-composition', this.updateComposition.bind(this))
+        this.store.on('end-composition', this.endComposition.bind(this))
+
         this.changeFontSize(this.store.font_attr.specified_px);
 
         canvas.addEventListener('click', this.focus.bind(this));
@@ -33,6 +39,46 @@ export default class NeovimScreen {
 
         this.cursor = new Cursor(this.store, this.ctx);
         this.input = new Input(this.store);
+        this.composeEl  = document.getElementById('neovim-composing')
+    }
+    startComposition(line: number, col: number) {
+      this.startColumn = this.store.cursor.col
+
+      const {
+        fg, bg,
+        draw_width,
+        draw_height,
+        specified_px,
+        face,
+      } = this.store.font_attr;
+      const arr = bg.substring(bg.indexOf('(') + 1, bg.lastIndexOf(')')).split(/,\s*/)
+
+      const bg_color = `rgb(${arr[0]}, ${arr[1]}, ${arr[2]})`
+
+      const ratio = window.devicePixelRatio || 1
+
+      Object.assign(this.composeEl.style, {
+        color: fg,
+        backgroundColor: bg_color,
+        fontSize: specified_px + 'px',
+        fontFamily: face,
+        lineHeight: draw_height/ratio + 'px',
+        top: Math.floor(line * draw_height)/ratio + 'px',
+        left: col*draw_width/ratio + 'px'
+      })
+      // set style of composeEl
+    }
+
+    updateComposition(input: string) {
+      this.composeEl.textContent = input
+      this.store.cursor.col = this.startColumn + input.length
+      this.store.emit('cursor')
+    }
+
+    endComposition() {
+      this.composeEl.textContent = ''
+      this.store.cursor.col = this.startColumn
+      this.store.emit('cursor')
     }
 
     wheel(e: WheelEvent) {

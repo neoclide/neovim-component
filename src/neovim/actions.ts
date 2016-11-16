@@ -58,6 +58,7 @@ export enum Kind {
     StartComposing,
     UpdateComposing,
     EndComposing,
+    DefaultIM,
 };
 
 export interface ActionType {
@@ -352,5 +353,11 @@ export function updateComposing(input: string) {
 export function endComposing() {
   return {
     type: Kind.EndComposing
+  };
+}
+
+export function defaultIM() {
+  return {
+    type: Kind.DefaultIM
   };
 }

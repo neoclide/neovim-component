@@ -395,6 +395,10 @@ export default class NeovimStore extends EventEmitter {
                 this.emit('end-composition')
                 break;
             }
+            case Kind.DefaultIM: {
+                this.emit('default-im')
+                break;
+            }
             default: {
                 log.warn('Unhandled action: ', action);
                 break;

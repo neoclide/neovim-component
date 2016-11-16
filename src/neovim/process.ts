@@ -61,6 +61,9 @@ export default class NeovimProcess {
                 log.info(`nvim attached: ${this.neovim_process.pid} ${lines}x${columns} ${JSON.stringify(this.argv)}`);
                 this.store.on('input', (i: string) => nvim.input(i));
                 this.store.on('update-screen-bounds', () => nvim.uiTryResize(this.store.size.cols, this.store.size.lines));
+                this.store.on('default-im', () => {
+                  nvim.command('call SmartIM_Default()')
+                })
 
                 // Note:
                 // Neovim frontend has responsiblity to emit 'GUIEnter' on initialization.
@@ -158,7 +161,13 @@ export default class NeovimProcess {
                     d.dispatch(Action.updateSpecialColor(args[0] as number));
                     break;
                 case 'mode_change':
-                    d.dispatch(Action.changeMode(args[0] as string));
+                    this.client.eval('mode()').then(value => {
+                      if (value == 'c') {
+                        d.dispatch(Action.changeMode('command'));
+                      } else {
+                        d.dispatch(Action.changeMode(args[0] as string));
+                      }
+                    })
                     break;
                 case 'busy_start':
                     d.dispatch(Action.startBusy());

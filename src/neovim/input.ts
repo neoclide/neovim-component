@@ -1,5 +1,5 @@
 import NeovimStore from './store';
-import {inputToNeovim, notifyFocusChanged, startComposing, updateComposing, endComposing} from './actions';
+import {inputToNeovim, notifyFocusChanged, startComposing, updateComposing, endComposing, defaultIM} from './actions';
 import log from '../log';
 
 const OnDarwin = global.process.platform === 'darwin';
@@ -8,6 +8,8 @@ const IsAlpha = /^[a-zA-Z]$/;
 export default class NeovimInput {
     element: HTMLInputElement;
     ime_running: boolean;      // XXX: Local state!
+    should_input: boolean;      // XXX: Local state!
+    shiftKey: boolean;
 
     static shouldIgnoreOnKeydown(event: KeyboardEvent) {
         const {ctrlKey, shiftKey, altKey, keyCode, metaKey} = event;
@@ -226,6 +228,7 @@ export default class NeovimInput {
         this.element.addEventListener('compositionstart', this.startComposition.bind(this));
         this.element.addEventListener('compositionend', this.endComposition.bind(this));
         this.element.addEventListener('keydown', this.onInputNonText.bind(this));
+        this.element.addEventListener('keyup', this.onKeyup.bind(this));
         this.element.addEventListener('input', this.onInputText.bind(this));
         this.element.addEventListener('blur', this.onBlur.bind(this));
         this.element.addEventListener('focus', this.onFocus.bind(this));
@@ -280,10 +283,46 @@ export default class NeovimInput {
         this.store.dispatcher.dispatch(inputToNeovim('<FocusLost>'));
     }
 
+    onKeyup(event: KeyboardEvent) {
+      if (this.should_input) {
+        event.preventDefault()
+        const {keyCode} = event
+        if (keyCode == 16) return
+        if (keyCode == 186) {
+          this.inputToNeovim(':', event)
+          this.store.dispatcher.dispatch(defaultIM());
+        } else if (keyCode == 191) {
+          if (this.shiftKey) {
+            this.inputToNeovim('?', event)
+          } else {
+            this.inputToNeovim('/', event)
+          }
+        } else {
+          let str = String.fromCharCode(event.keyCode)
+          str = this.shiftKey ? str.toUpperCase() : str.toLowerCase()
+          this.inputToNeovim(str, event)
+        }
+        this.should_input = false
+      }
+    }
     // Note:
     // Assumes keydown event is always fired before input event
     onInputNonText(event: KeyboardEvent) {
         log.debug('Keydown event:', event);
+        const {ctrlKey, altKey, shiftKey, keyCode, metaKey} = event;
+        if (event.keyCode == 16) {
+          this.shiftKey = true
+        } else if (!shiftKey) {
+          this.shiftKey = false
+        }
+        if (this.store.mode == 'normal') {
+          if (!ctrlKey && !altKey && !metaKey &&
+              (keyCode == 229 || keyCode == 186 || keyCode == 191)) {
+            event.preventDefault()
+            this.should_input = true
+            return
+          }
+        }
         if (this.ime_running) {
             log.debug('IME is running.  Input canceled.');
             return;

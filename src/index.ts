@@ -99,7 +99,6 @@ Polymer({
                 );
         });
     },
-
     detached: function() {
         this.editor.emit('detach');
         if (this.resize_listener) {

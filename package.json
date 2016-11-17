@@ -12,12 +12,11 @@
   },
   "scripts": {
     "start": "npm run dep && npm run build && npm run example",
-    "build": "tsc --pretty -p src && browserify -o build/index.js src/out/index.js",
+    "build": "webpack",
     "debug": "ELECTRON_ENABLE_STACK_DUMPING=true NODE_ENV=debug electron .",
-    "dep": "npm install && bower install && typings install && mkdir -p build",
+    "dep": "npm install && bower install && mkdir -p build",
     "example": "electron .",
-    "lint": "tslint $(git ls-files | grep -E \"\\.ts$\")",
-    "watch": "guard --watchdir src test",
+    "watch": "webpack -w",
     "test": "mocha test/unit/"
   },
   "keywords": [
@@ -32,25 +31,26 @@
   "license": "MIT",
   "dependencies": {
     "component-emitter": "^1.2.1",
-    "flux": "^3.0.0",
+    "debounce": "^1.0.0",
+    "flux": "^3.1.0",
     "loglevel": "^1.4.1",
     "promised-neovim-client": "^2.0.2"
   },
   "devDependencies": {
-    "bower": "^1.7.9",
-    "browserify": "^13.1.0",
-    "canvas": "^1.5.0",
+    "babel-core": "^6.18.2",
+    "babel-loader": "^6.2.7",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.18.0",
+    "bower": "^1.8.0",
+    "browserify": "^13.1.1",
+    "canvas": "^1.6.2",
     "chai": "^3.5.0",
     "electron-prebuilt": "~1.4.3",
-    "jsdom": "^8.4.0",
+    "jsdom": "^9.8.3",
     "mocha": "^3.1.2",
     "mocha-generators": "^1.2.0",
     "nightmare": "https://github.com/rhysd/nightmare.git#custom-electron-path",
-    "tslint": "^3.15.1",
-    "typescript": "^2.0.3",
-    "typings": "^1.4.0"
+    "webpack": "^1.13.3"
   },
   "browser": {
-    "emitter": "component-emitter"
   }
 }

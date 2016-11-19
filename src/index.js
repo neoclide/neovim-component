@@ -1,6 +1,7 @@
 import Polymer from 'polymer'
 import Neovim from './neovim'
 import debounce from 'debounce'
+import {checkResize} from './util'
 
 Polymer({
   is: 'neovim-editor',
@@ -84,20 +85,24 @@ Polymer({
   },
 
   attached: function() {
-    const canvas = document.querySelector('.neovim-canvas')
+    const canvas = this.querySelector('.neovim-canvas')
     const width = this.width || canvas.parentElement.offsetWidth
     const height = this.height || canvas.parentElement.offsetHeight
     this.editor.attachCanvas(width, height, canvas)
-    this.resize_listener = debounce(() => {
+    let wrapper = this.querySelector('.neovim-wrapper')
+
+    checkResize(wrapper, () => {
+      console.log('resize')
       this.editor.screen.checkShouldResize()
-    }, 100)
-    window.addEventListener('resize', this.resize_listener)
+    })
+
+    //window.addEventListener('resize', debounce(() => {
+    //  this.editor.screen.checkShouldResize()
+    //}, 100))
   },
   detached: function() {
     this.editor.emit('detach')
-    if (this.resize_listener) {
-      window.removeEventListener('resize', this.resize_listener)
-    }
+    if (this.unbind_resize) this.unbind_resize()
   },
 
   attributeChanged: function(name, type) {

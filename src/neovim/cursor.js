@@ -12,6 +12,11 @@ function invertColor(image) {
   return image
 }
 
+function borderColor(bg) {
+  const ms = bg.match(/\((\d+),\s*(\d+),\s*(\d+)/)
+  return `rgb(${255 - ms[1]}, ${255 - ms[2]}, ${255 - ms[3]})`
+}
+
 class CursorBlinkTimer extends Emitter {
   constructor(interval) {
     super()
@@ -83,8 +88,6 @@ export default class NeovimCursor {
     this.store.on('cursor', this.updateCursorPos.bind(this))
     this.store.on('update-fg', () => this.redraw())
     this.store.on('font-size-changed', this.updateSize.bind(this))
-    //this.store.on('blink-cursor-started', () => this.blink_timer.start())
-    //this.store.on('blink-cursor-stopped', () => this.blink_timer.stop())
     this.store.on('busy', () => this.updateCursorBlinking())
     this.store.on('focus-changed', () => this.updateCursorBlinking())
     this.store.on('mode', () => this.updateCursorBlinking())
@@ -92,7 +95,7 @@ export default class NeovimCursor {
   }
   shouldBlink() {
     const store = this.store
-    return store.focused && store.mode == 'insert'
+    return store.focused && store.mode != 'normal'
   }
 
   updateSize() {
@@ -137,12 +140,22 @@ export default class NeovimCursor {
 
   redrawImpl() {
     this.delay_timer = null
-    const cursor_width = this.store.mode === 'insert' ? (window.devicePixelRatio || 1) : this.store.font_attr.draw_width
-    const cursor_height = this.store.font_attr.draw_height
-    const x = this.store.cursor.col * this.store.font_attr.draw_width
-    const y = this.store.cursor.line * this.store.font_attr.draw_height
+    const {focused, mode, font_attr, cursor} = this.store
+    const cursor_width = mode !== 'normal' ? (window.devicePixelRatio || 1) : font_attr.draw_width
+    const cursor_height = font_attr.draw_height
+    const x = cursor.col * font_attr.draw_width
+    const y = cursor.line * font_attr.draw_height
     const captured = this.screen_ctx.getImageData(x, y, cursor_width, cursor_height)
-    this.ctx.putImageData(invertColor(captured), 0, 0)
+    if (focused) {
+      this.ctx.putImageData(invertColor(captured), 0, 0)
+    } else if (mode == 'normal') {
+      this.ctx.putImageData(captured, 0, 0)
+      const color = borderColor(font_attr.bg)
+      this.ctx.strokeStyle = color
+      this.ctx.lineWidth = window.devicePixelRatio
+      //this.ctx.strokeRect(x, y, font_attr.draw_width - 2*window.devicePixelRatio, font_attr.draw_height) 
+      this.ctx.strokeRect(0, 0, font_attr.draw_width - 2, font_attr.draw_height)
+    }
   }
 
   updateCursorBlinking() {

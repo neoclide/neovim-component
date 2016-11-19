@@ -2,19 +2,14 @@ import Emitter from 'component-emitter'
 import log from '../log'
 import {dragEnd} from './actions'
 
-function invertColor(image) {
-  const d = image.data
-  for (let i = 0; i < d.length; i+=4) {
-    d[i] = 255 - d[i];     // Red
-    d[i+1] = 255 - d[i+1]; // Green
-    d[i+2] = 255 - d[i+2]; // Blue
-  }
-  return image
-}
-
 function borderColor(bg) {
   const ms = bg.match(/\((\d+),\s*(\d+),\s*(\d+)/)
+  if (!ms) return '#ffffff'
   return `rgb(${255 - ms[1]}, ${255 - ms[2]}, ${255 - ms[3]})`
+}
+
+function close(a, b) {
+  return Math.abs(a - b) < 2
 }
 
 class CursorBlinkTimer extends Emitter {
@@ -84,7 +79,21 @@ export default class NeovimCursor {
       const i = document.querySelector('.neovim-input')
       if (i) i.focus()
     })
+    this.ime = window.keyboardLayout && window.keyboardLayout != 'com.apple.keylayout.US'
+    window.addEventListener('layoutChange', e => {
+      this.ime = e.detail !== 'com.apple.keylayout.US'
+      this.redraw()
+    })
 
+    this.store.on('update-bg', () => {
+      const bg = this.store.bg_color
+      const ms = bg.match(/\((\d+),\s*(\d+),\s*(\d+)/)
+      if (ms) {
+        this.bgColors = {r: ms[1], g: ms[2], b: ms[3]}
+      } else {
+        this.bgColors = {r: 0, g: 0, b: 0}
+      }
+    })
     this.store.on('cursor', this.updateCursorPos.bind(this))
     this.store.on('update-fg', () => this.redraw())
     this.store.on('font-size-changed', this.updateSize.bind(this))
@@ -96,6 +105,25 @@ export default class NeovimCursor {
   shouldBlink() {
     const store = this.store
     return store.focused && store.mode != 'normal'
+  }
+
+  invertColor(image) {
+    const d = image.data
+    const {ime, bgColors} = this
+    for (let i = 0; i < d.length; i+=4) {
+      if (ime && close(d[i], bgColors.r)
+          && close(d[i + 1], bgColors.g)
+          && close(d[i + 2], bgColors.b)) {
+        d[i] = 255
+        d[i + 1] = 193
+        d[i + 2] = 7
+      } else {
+        d[i] = 255 - d[i]
+        d[i+1] = 255 - d[i+1]
+        d[i+2] = 255 - d[i+2]
+      }
+    }
+    return image
   }
 
   updateSize() {
@@ -147,7 +175,7 @@ export default class NeovimCursor {
     const y = cursor.line * font_attr.draw_height
     const captured = this.screen_ctx.getImageData(x, y, cursor_width, cursor_height)
     if (focused) {
-      this.ctx.putImageData(invertColor(captured), 0, 0)
+      this.ctx.putImageData(this.invertColor(captured), 0, 0)
     } else if (mode == 'normal') {
       this.ctx.putImageData(captured, 0, 0)
       const color = borderColor(font_attr.bg)

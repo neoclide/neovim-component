@@ -9,10 +9,14 @@ export default class NeovimScreen {
     this.canvas = canvas
     this.ctx = this.canvas.getContext('2d', {alpha: true})
     this.store.on('put', this.drawText.bind(this))
-    this.store.on('clear-all', this.clearAll.bind(this))
+    this.store.on('clear-all', () => {
+      this.clearAll()
+    })
     this.store.on('clear-eol', this.clearEol.bind(this))
     // Note: 'update-bg' clears all texts in screen.
-    this.store.on('update-bg', this.clearAll.bind(this))
+    this.store.on('update-bg', () => {
+      this.clearAll()
+    })
     this.store.on('screen-scrolled', this.scroll.bind(this))
     this.store.on(
       'line-height-changed',
@@ -80,15 +84,23 @@ export default class NeovimScreen {
   }
 
   mouseDown(e) {
-    this.store.dispatcher.dispatch(A.dragStart(e))
+    // left mouse down
+    if (e.button == 0) {
+      this.store.dispatcher.dispatch(A.dragStart(e))
+    }
   }
 
   mouseUp(e) {
-    this.store.dispatcher.dispatch(A.dragEnd(e))
+    // left mouse up
+    if (e.button == 0) {
+      this.store.dispatcher.dispatch(A.dragEnd(e))
+    } else if (e.button == 2) {
+      this.store.emit('contextmenu')
+    }
   }
 
   mouseMove(e) {
-    if (e.buttons !== 0) {
+    if (e.buttons === 1) {
       this.store.dispatcher.dispatch(A.dragUpdate(e))
     }
   }
@@ -236,6 +248,9 @@ export default class NeovimScreen {
       // Note:
       // If the text includes only half characters, we can render it at once.
       const text = chars.map(c => (c[0] || '')).join('')
+      if (text.length == 1 && text.codePointAt(0) == 9888) {
+        this.warningSign = true
+      }
       this.ctx.fillText(text, x, y)
       return
     }
@@ -251,6 +266,10 @@ export default class NeovimScreen {
   }
 
   drawText(chars) {
+    if (this.warningSign) {
+      this.warningSign = false
+      return
+    }
     const {line, col} = this.store.cursor
     const {
       fg, bg, sp,

@@ -18,6 +18,24 @@ function colorString(new_color, fallback, opacity = 1) {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`
 }
 
+function defaultIM() {
+  if (window.keyboardLayout && window.keyboardLayout !== 'com.apple.keylayout.US') {
+    window.imselect.selectMethod()
+    return true
+  }
+  return false
+}
+
+let cmdlineIM = null
+
+function saveCommandIm() {
+  cmdlineIM = window.keyboardLayout
+}
+
+function selectCommandIm() {
+  if (cmdlineIM) window.imselect.selectMethod(cmdlineIM)
+}
+
 export default class NeovimStore extends Emitter {
   constructor() {
     super()
@@ -47,6 +65,7 @@ export default class NeovimStore extends Emitter {
       line: 0,
       col: 0,
     }
+    this.opacity = 0.8
     this.mode = 'normal'
     this.busy = false
     this.mouse_enabled = true
@@ -61,6 +80,7 @@ export default class NeovimStore extends Emitter {
       bottom: 0,
     }
     this.focused = true
+    this.searching = false
     this.line_height = 1.2
     this.alt_key_disabled = false
     this.meta_key_disabled = false
@@ -74,6 +94,14 @@ export default class NeovimStore extends Emitter {
     switch (action.type) {
       case Kind.Input: {
         this.emit('input', action.input)
+        break
+      }
+      case Kind.StartSearch: {
+        this.searching = true
+        break
+      }
+      case Kind.ChangeOpacity: {
+        this.opacity = action.opacity
         break
       }
       case Kind.PutText: {
@@ -98,10 +126,10 @@ export default class NeovimStore extends Emitter {
         this.font_attr.undercurl = hl.undercurl
         if (hl.reverse === true) {
           this.font_attr.fg = colorString(hl.background, this.bg_color)
-          this.font_attr.bg = colorString(hl.foreground, this.fg_color, 0.8)
+          this.font_attr.bg = colorString(hl.foreground, this.fg_color, this.opacity)
         } else {
           this.font_attr.fg = colorString(hl.foreground, this.fg_color)
-          this.font_attr.bg = colorString(hl.background, this.bg_color, 0.8)
+          this.font_attr.bg = colorString(hl.background, this.bg_color, this.opacity)
         }
         this.font_attr.sp = colorString(hl.special, this.sp_color || this.fg_color)
         log.debug('Highlight is updated: ', this.font_attr)
@@ -110,6 +138,7 @@ export default class NeovimStore extends Emitter {
       case Kind.FocusChanged: {
         this.focused = action.focused
         this.emit('focus-changed')
+        if (this.focused && this.mode == 'normal') defaultIM()
         log.debug('Focus changed: ', this.focused)
         break
       }
@@ -149,7 +178,7 @@ export default class NeovimStore extends Emitter {
         break
       }
       case Kind.UpdateBG: {
-        this.bg_color = colorString(action.color, this.font_attr.bg, 0.8)
+        this.bg_color = colorString(action.color, this.font_attr.bg, this.opacity)
         this.emit('update-bg')
         log.debug('Background color is updated: ', this.bg_color)
         break
@@ -161,7 +190,17 @@ export default class NeovimStore extends Emitter {
         break
       }
       case Kind.Mode: {
-        this.mode = action.mode
+        if (this.mode == 'cmdline') {
+          if (this.searching) saveCommandIm()
+          this.searching = false
+        }
+        if (this.mode != 'insert' && action.mode == 'normal') {
+          defaultIM()
+        }
+        const mode = this.mode = action.mode
+        if (mode == 'cmdline' && this.searching) {
+          selectCommandIm()
+        }
         this.emit('mode', this.mode)
         break
       }
@@ -272,13 +311,11 @@ export default class NeovimStore extends Emitter {
       case Kind.SetTitle: {
         this.title = action.title
         this.emit('title-changed')
-        log.info('Title is set to ', this.title)
         break
       }
       case Kind.SetIcon: {
         this.icon_path = action.icon_path
         this.emit('icon-changed')
-        log.info('Icon is set to ', this.icon_path)
         break
       }
       case Kind.UpdateLineHeight: {
@@ -334,10 +371,6 @@ export default class NeovimStore extends Emitter {
       }
       case Kind.EndComposing: {
         this.emit('end-composition')
-        break
-      }
-      case Kind.DefaultIM: {
-        this.emit('default-im')
         break
       }
       default: {

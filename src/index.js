@@ -92,7 +92,6 @@ Polymer({
     let wrapper = this.querySelector('.neovim-wrapper')
 
     checkResize(wrapper, () => {
-      console.log('resize')
       this.editor.screen.checkShouldResize()
     })
 

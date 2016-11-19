@@ -39,7 +39,8 @@ Kind[Kind["FocusChanged"] = 35] = "FocusChanged"
 Kind[Kind["StartComposing"] = 36] = "StartComposing"
 Kind[Kind["UpdateComposing"] = 37] = "UpdateComposing"
 Kind[Kind["EndComposing"] = 38] = "EndComposing"
-Kind[Kind["DefaultIM"] = 39] = "DefaultIM"
+Kind[Kind["StartSearch"] = 39] = "StartSearch"
+Kind[Kind["ChangeOpacity"] = 40] = "ChangeOpacity"
 
 export function putText(text) {
   return {
@@ -308,8 +309,15 @@ export function endComposing() {
   }
 }
 
-export function defaultIM() {
+export function startSearch () {
   return {
-    type: Kind.DefaultIM
+    type: Kind.StartSearch
+  }
+}
+
+export function changeOpacity(opacity) {
+  return {
+    type: Kind.ChangeOpacity,
+    opacity
   }
 }

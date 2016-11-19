@@ -31,10 +31,12 @@
   "license": "MIT",
   "dependencies": {
     "component-emitter": "^1.2.1",
+    "component-raf": "^1.2.0",
     "debounce": "^1.0.0",
     "flux": "^3.1.0",
     "loglevel": "^1.4.1",
-    "promised-neovim-client": "^2.0.2"
+    "promised-neovim-client": "^2.0.2",
+    "resizelistener": "0.0.3"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",
@@ -52,5 +54,6 @@
     "webpack": "^1.13.3"
   },
   "browser": {
+    "raf": "component-raf"
   }
 }

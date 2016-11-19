@@ -1,4 +1,4 @@
-import {inputToNeovim, notifyFocusChanged, startComposing, updateComposing, endComposing, defaultIM} from './actions'
+import {inputToNeovim, notifyFocusChanged, startComposing, updateComposing, endComposing, startSearch} from './actions'
 import log from '../log'
 
 const OnDarwin = global.process.platform === 'darwin'
@@ -220,8 +220,8 @@ export default class NeovimInput {
         this.element = document.querySelector('.neovim-input')
         this.element.addEventListener('compositionstart', this.startComposition.bind(this))
         this.element.addEventListener('compositionend', this.endComposition.bind(this))
-        this.element.addEventListener('keydown', this.onInputNonText.bind(this))
-        this.element.addEventListener('keyup', this.onKeyup.bind(this))
+        this.element.addEventListener('keydown', this.onKeydown.bind(this))
+        //this.element.addEventListener('keyup', this.onKeyup.bind(this))
         this.element.addEventListener('input', this.onInputText.bind(this))
         this.element.addEventListener('blur', this.onBlur.bind(this))
         this.element.addEventListener('focus', this.onFocus.bind(this))
@@ -283,7 +283,6 @@ export default class NeovimInput {
         if (keyCode == 16) return
         if (keyCode == 186) {
           this.inputToNeovim(':', event)
-          this.store.dispatcher.dispatch(defaultIM())
         } else if (keyCode == 191) {
           if (this.shiftKey) {
             this.inputToNeovim('?', event)
@@ -300,22 +299,16 @@ export default class NeovimInput {
     }
     // Note:
     // Assumes keydown event is always fired before input event
-    onInputNonText(event) {
+    onKeydown(event) {
         log.debug('Keydown event:', event)
         const {ctrlKey, altKey, shiftKey, keyCode, metaKey} = event
-        if (event.keyCode == 16) {
-          this.shiftKey = true
-        } else if (!shiftKey) {
-          this.shiftKey = false
+
+        if (metaKey) return
+
+        if (this.store.mode == 'normal' && keyCode == 191)  {
+          this.store.dispatcher.dispatch(startSearch())
         }
-        if (this.store.mode == 'normal') {
-          if (!ctrlKey && !altKey && !metaKey &&
-              (keyCode == 229 || keyCode == 186 || keyCode == 191)) {
-            event.preventDefault()
-            this.should_input = true
-            return
-          }
-        }
+
         if (this.ime_running) {
             log.debug('IME is running.  Input canceled.')
             return
@@ -335,12 +328,6 @@ export default class NeovimInput {
         if (this.store.alt_key_disabled && event.altKey) {
             // Note: Overwrite 'altKey' to false to disable alt key input.
             Object.defineProperty(event, 'altKey', {value: false})
-        }
-        if (this.store.meta_key_disabled && event.metaKey) {
-            // Note:
-            // Simply ignore input with metakey if metakey is disabled.  This aims to delegate the key input
-            // to menu items on OS X.
-            return
         }
 
         if (should_osx_workaround) {
@@ -409,9 +396,6 @@ export default class NeovimInput {
         log.debug('Input event:', event)
 
         const t = event.target
-        if (t.value === '') {
-            log.warn('onInputText: Empty')
-        }
 
         const input = t.value !== '<' ? t.value : '<LT>'
         if (this.ime_running) {

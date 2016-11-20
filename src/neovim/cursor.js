@@ -177,7 +177,6 @@ export default class NeovimCursor {
     const y = cursor.line * font_attr.draw_height
     const captured = this.screen_ctx.getImageData(x, y, cursor_width, cursor_height)
     if (mode == 'replace') {
-      console.log(mode)
       const y = font_attr.draw_height - window.devicePixelRatio
       const color = borderColor(font_attr.bg)
       ctx.strokeStyle = color

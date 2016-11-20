@@ -246,7 +246,7 @@ export default class NeovimStore extends Emitter {
       }
       case Kind.UpdateScreenBounds: {
         if (this.resize(action.lines, action.cols)) {
-          this.emit('update-screen-bounds')
+          this.emit('update-screen-bounds', action.lines, action.cols)
         }
         break
       }
@@ -381,10 +381,10 @@ export default class NeovimStore extends Emitter {
   }
 
   resize(lines, cols) {
-    if (this.size.lines === lines
-      && this.size.cols === cols) {
-        return false
-    }
+    //if (this.size.lines === lines
+    //  && this.size.cols === cols) {
+    //    return false
+    //}
     this.size.lines = lines
     this.size.cols = cols
     this.scroll_region = {

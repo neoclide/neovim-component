@@ -15,7 +15,7 @@ export default class NeovimScreen {
     this.store.on('clear-eol', this.clearEol.bind(this))
     // Note: 'update-bg' clears all texts in screen.
     this.store.on('update-bg', () => {
-      this.clearAll()
+      //this.clearAll()
     })
     this.store.on('screen-scrolled', this.scroll.bind(this))
     this.store.on(
@@ -27,7 +27,7 @@ export default class NeovimScreen {
     this.store.on('update-composition', this.updateComposition.bind(this))
     this.store.on('end-composition', this.endComposition.bind(this))
 
-    this.changeFontSize(this.store.font_attr.specified_px)
+    this.changeFontSize(this.store.font_attr.specified_px, true)
 
     canvas.addEventListener('click', this.focus.bind(this))
     canvas.addEventListener('mousedown', this.mouseDown.bind(this))
@@ -38,6 +38,7 @@ export default class NeovimScreen {
     this.cursor = new Cursor(this.store, this.ctx)
     this.input = new Input(this.store)
     this.composeEl  = document.getElementById('neovim-composing')
+    this.initialized = true
   }
   startComposition(line, col) {
     this.startColumn = this.store.cursor.col

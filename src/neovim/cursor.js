@@ -62,6 +62,7 @@ export default class NeovimCursor {
     this.element.style.top = '0px'
     this.element.style.left = '0px'
     this.ctx = this.element.getContext('2d', {alpha: false})
+    this.ctx.lineWidth = window.devicePixelRatio
     this.updateSize()
     this.blink_timer.on('tick', (shown) => {
       if (shown) {
@@ -168,21 +169,30 @@ export default class NeovimCursor {
 
   redrawImpl() {
     this.delay_timer = null
+    const {ctx} = this
     const {focused, mode, font_attr, cursor} = this.store
-    const cursor_width = mode !== 'normal' ? (window.devicePixelRatio || 1) : font_attr.draw_width
-    const cursor_height = font_attr.draw_height
+    const cursor_width = mode !== 'normal' ? window.devicePixelRatio : font_attr.draw_width
+    let cursor_height = font_attr.draw_height
     const x = cursor.col * font_attr.draw_width
     const y = cursor.line * font_attr.draw_height
     const captured = this.screen_ctx.getImageData(x, y, cursor_width, cursor_height)
-    if (focused) {
-      this.ctx.putImageData(this.invertColor(captured), 0, 0)
-    } else if (mode == 'normal') {
-      this.ctx.putImageData(captured, 0, 0)
+    if (mode == 'replace') {
+      console.log(mode)
+      const y = font_attr.draw_height - window.devicePixelRatio
       const color = borderColor(font_attr.bg)
-      this.ctx.strokeStyle = color
-      this.ctx.lineWidth = window.devicePixelRatio
+      ctx.strokeStyle = color
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(font_attr.draw_width, y)
+      ctx.stroke()
+    } else if (focused) {
+      ctx.putImageData(this.invertColor(captured), 0, 0)
+    } else if (mode == 'normal') {
+      ctx.putImageData(captured, 0, 0)
+      const color = borderColor(font_attr.bg)
+      ctx.strokeStyle = color
       //this.ctx.strokeRect(x, y, font_attr.draw_width - 2*window.devicePixelRatio, font_attr.draw_height) 
-      this.ctx.strokeRect(0, 0, font_attr.draw_width - 2, font_attr.draw_height)
+      ctx.strokeRect(0, 0, font_attr.draw_width - 2, font_attr.draw_height)
     }
   }
 

@@ -1,6 +1,5 @@
 import Polymer from 'polymer'
 import Neovim from './neovim'
-import debounce from 'debounce'
 import {checkResize} from './util'
 
 Polymer({

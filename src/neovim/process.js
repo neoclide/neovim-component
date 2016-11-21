@@ -6,6 +6,14 @@ import * as Action from './actions'
 import log from '../log'
 
 export default class NeovimProcess {
+  /**
+   * Constructor
+   *
+   * @public
+   * @param {NvimStore} store
+   * @param {String} command
+   * @param {Array} argv
+   */
   constructor( store, command, argv) {
     this.store = store
     this.command = command
@@ -35,11 +43,10 @@ export default class NeovimProcess {
           nvim.uiAttach(columns, lines, true, true /*notify*/)
           this.started = true
           log.info(`nvim attached: ${this.neovim_process.pid} ${lines}x${columns} ${JSON.stringify(this.argv)}`)
+          // notify nvim
           this.store.on('input', i => nvim.input(i))
           this.store.on('update-screen-bounds', (lines, cols) => nvim.uiTryResize(cols, lines))
 
-          // Note:
-          // Neovim frontend has responsiblity to emit 'GUIEnter' on initialization.
           setTimeout(() => {
             this.client.command('silent doautocmd <nomodeline> GUIEnter')
           }, 0)
